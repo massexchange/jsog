@@ -1,5 +1,8 @@
 var debug = false;
 
+var ID_PROP = "@id";
+var REF_PROP = "@ref";
+
 var LOG = (message, obj) => {
     if(debug)
         console.log(message, obj);
@@ -11,14 +14,10 @@ util.isObject = function(obj) {
     return typeof obj === "object";
 };
 
-var hasCycle = function(obj) {
-    try {
-        JSON.stringify(obj);
-        return false;
-    }
-    catch(e) {
-        return true;
-    }
+var IdGen = () => {
+    var nextId = 0;
+
+    return () => nextId++;
 };
 
 var serialize = function(obj) {
@@ -26,13 +25,7 @@ var serialize = function(obj) {
         return JSON.stringify(obj);
     }
     catch(e) {
-        var idGen = (() => {
-            var nextId = 0;
-
-            return () => nextId++;
-        })();
-
-        return JSON.stringify(encodeCycles(obj, idGen));
+        return JSON.stringify(encodeCycles(obj, IdGen()));
     }
 };
 
@@ -40,7 +33,7 @@ var encodeCycles = function(obj, idGen, currVisited) {
     var visited = currVisited || [obj];
 
     return hasCycle(obj)
-      ? Object.keys(obj).map(function(key) {
+      ? Object.keys(obj).map(key => {
             var out = {};
 
             var field = obj[key];
@@ -48,11 +41,11 @@ var encodeCycles = function(obj, idGen, currVisited) {
             if(util.isObject(field)) {
                 var fieldIndex = visited.indexOf(field);
                 if(fieldIndex >= 0) {
-                    var id = field["@id"] || (field["@id"] = idGen().toString());
+                    var id = field[ID_PROP] || (field[ID_PROP] = idGen().toString());
 
                     LOG("field: ", field);
 
-                    out[key] = { "@ref": id };
+                    out[key] = { [REF_PROP]: id };
 
                     return out;
                 }
@@ -70,6 +63,16 @@ var encodeCycles = function(obj, idGen, currVisited) {
             return Object.assign(obj, field);
         }, {})
       : obj;
+};
+
+var hasCycle = function(obj) {
+    try {
+        JSON.stringify(obj);
+        return false;
+    }
+    catch(e) {
+        return true;
+    }
 };
 
 module.exports = serialize;

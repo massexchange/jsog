@@ -39,4 +39,13 @@ var a = {
 
 var expected = '{"b":{"e":"e","f":"f","g":{"h":"h","i":"i"}},"c":"c","d":{"j":"j","k":"k","l":{"n":{"p":"p","q":{"@ref":"0"}},"o":"o","m":{"@ref":"1"},"@id":"0"},"@id":"1"}}';
 
-console.log("Passed: " + serialize(a) == expected);
+var result = serialize(a);
+result = serialize(a);
+
+var passed = result == expected;
+
+console.log("Passed: " + passed);
+if(!passed) {
+    console.log("Expected: ", expected);
+    console.log("Actual:   ", result);
+}
